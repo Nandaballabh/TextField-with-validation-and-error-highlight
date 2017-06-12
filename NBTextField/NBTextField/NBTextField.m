@@ -141,7 +141,6 @@
         {
             NSMutableCharacterSet *charSet = [NSMutableCharacterSet letterCharacterSet];
             [charSet formUnionWithCharacterSet:[NSMutableCharacterSet whitespaceCharacterSet]];
-            [charSet formUnionWithCharacterSet:[NSCharacterSet decimalDigitCharacterSet]];
             [charSet formUnionWithCharacterSet:[NSCharacterSet characterSetWithCharactersInString:@"_-'"]];
             self.allowedCharSet = charSet;
 
@@ -198,7 +197,7 @@
     datePicker.datePickerMode = pickerMode;
     datePicker.layer.borderColor = [UIColor colorWithRed:187.0f/255.0f green:187.0f/255.0f blue:187.0f/255.0f alpha:1.0f].CGColor;
     datePicker.layer.borderWidth = 1.0f;
-    
+    datePicker.backgroundColor = [UIColor whiteColor];
     UIToolbar *toolBar = [[UIToolbar alloc]initWithFrame:CGRectMake(0, 0,CGRectGetWidth([UIScreen mainScreen].bounds), 44)];
     [toolBar setBarTintColor:self.topBarColor];
     [toolBar setTintColor:[UIColor whiteColor]];
@@ -231,6 +230,7 @@
     pickerView.dataSource = self;
     pickerView.layer.borderColor = [UIColor colorWithRed:187.0f/255.0f green:187.0f/255.0f blue:187.0f/255.0f alpha:1.0f].CGColor;
     pickerView.layer.borderWidth = 1.0f;
+    pickerView.backgroundColor = [UIColor whiteColor];
     
     UIToolbar *toolBar = [[UIToolbar alloc]initWithFrame:CGRectMake(0, 0,CGRectGetWidth([UIScreen mainScreen].bounds), 44)];
     [toolBar setBarTintColor:self.topBarColor];
@@ -269,7 +269,7 @@
         
     } else if(self.type == NBTextFieldTypePicker) {
         if(self.inputPickerDataSource.count > 0)
-            self.text = self.inputPickerDataSource[selectedIndex];
+            self.text = [NSString stringWithFormat:@"%@",self.inputPickerDataSource[selectedIndex]];
     }
     [self resignFirstResponder];
 }
@@ -312,7 +312,7 @@
         rowView.textAlignment = NSTextAlignmentCenter;
     }
     // Fill the label text here
-    rowView.text = [self.inputPickerDataSource objectAtIndex:row];
+    rowView.text = [NSString stringWithFormat:@"%@",[self.inputPickerDataSource objectAtIndex:row]];
     return rowView;
 }
 
@@ -376,6 +376,7 @@
 
 - (BOOL)textField:(NBTextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
     
+    [self focusTextField];
     NSString *newString = [textField.text stringByReplacingCharactersInRange:range withString:string];
     
     BOOL isValidText = YES;
@@ -451,64 +452,86 @@
             
         case NBTextFieldTypeName:
         {
-
-            if((self.isOptional && self.text.length > 0 && ![self.text isValidateName]) || (!self.isOptional && self.text.length <= 0 && ![self.text isValidateName])) {
-                errorString = @"Name is not valid Name is not valid";
-                [self markTextField];
-            } else {
+            
+            if((!self.isOptional && self.text.length > 0) || self.isOptional) {
+                
                 [self clearTextField];
+                
+            } else {
+                
+                [self markTextField];
+                errorString = @"Enter valid name";
+                
             }
             break;
         }
         case NBTextFieldTypeMobile:
-            if((self.isOptional && self.text.length > 0 && ![self.text isValidateMobile]) || (!self.isOptional && self.text.length <= 0 && ![self.text isValidateMobile])) {
+            
+            if((!self.isOptional && self.text.length > 0 && [self.text isValidateMobile]) || (self.isOptional && self.text.length <= 0) || (self.isOptional && self.text.length > 0 && [self.text isValidateMobile])) {
+                
+                [self clearTextField];
+                errorString = @"";
+                
+            } else {
+                
                 errorString = @"Mobile number is not valid";
                 [self markTextField];
             }
+            
             break;
             
         case NBTextFieldTypeOTP:
-
-            if((self.text.length > 0 && [self.text isValidateOTP]) || (self.isOptional && self.text.length == 0)) {
+            
+            if((!self.isOptional && self.text.length == OTP_LENGTH && [self.text isValidateOTP]) || (self.isOptional && self.text.length <= 0) || (self.isOptional && self.text.length == OTP_LENGTH && [self.text isValidateOTP])) {
                 
                 [self clearTextField];
+                errorString = @"";
                 
             } else {
+                
                 errorString = [NSString stringWithFormat:@"OTP should be %d digit number",OTP_LENGTH];
                 [self markTextField];
             }
             break;
             
-            
-            
         case NBTextFieldTypeEmail:
             
-            if((self.text.length > 0 && [self.text isValidateEmail]) || (self.isOptional && self.text.length == 0)) {
+            if((!self.isOptional && self.text.length > 0 && [self.text isValidateEmail]) || (self.isOptional && self.text.length <= 0) || (self.isOptional && self.text.length > 0 && [self.text isValidateEmail])) {
                 
                 [self clearTextField];
-
+                errorString = @"";
+                
             } else {
+                
                 errorString = @"Email is not valid";
                 [self markTextField];
             }
             break;
             
+            
         case NBTextFieldTypeDatePicker:
-            if(self.text.length <= 0 && !self.isOptional) {
+            
+            if((self.text.length > 0 && !self.isOptional) || self.isOptional) {
+                
+                [self clearTextField];
+                errorString = @"";
+                
+            } else {
                 errorString = @"Date Picker's selected option is not valid";
                 [self markTextField];
-            } else {
-                [self clearTextField];
             }
             break;
-
+            
         case NBTextFieldTypePicker:
-            if(self.text.length <= 0 && !self.isOptional) {
+            
+            if((self.text.length > 0 && !self.isOptional) || self.isOptional) {
+                
+                [self clearTextField];
+                errorString = @"";
+                
+            } else {
                 errorString = @"Picker's selected option is not valid";
                 [self markTextField];
-
-            } else {
-                [self clearTextField];
             }
             break;
 
